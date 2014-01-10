@@ -2,7 +2,7 @@
  * error.c
  *
  * error reporting routines
- * basically wrappers around printf
+ * basicly wrappers around printf
  *
  * (c) 2005 NLnet Labs
  *
@@ -69,7 +69,6 @@ mesg(const char *fmt, ...)
 	va_end(args);
 }
 
-#if 0
 /* print stuff when in verbose mode (1) */
 void
 verbose(const char *fmt, ...)
@@ -83,4 +82,34 @@ verbose(const char *fmt, ...)
 	verbose_va_list(fmt, args);
 	va_end(args);
 }
-#endif
+
+/* print stuff when in vverbose mode (2) */
+void
+vverbose(const char *fmt, ...)
+{
+	va_list args;
+	if (verbosity < 2) {
+		return;
+	}
+
+	va_start(args, fmt);
+	verbose_va_list(fmt, args);
+	va_end(args);
+}
+
+static void
+debug_va_list(const char *fmt, va_list args)
+{
+        vfprintf(stderr, fmt, args);
+        fprintf(stderr, "\n");
+}
+
+void
+debug(const char *fmt, ...)
+{
+	va_list args;
+	fprintf(stderr, "[DEBUG] ");
+	va_start(args, fmt);
+	debug_va_list(fmt, args);
+	va_end(args);
+}

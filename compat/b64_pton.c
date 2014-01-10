@@ -118,16 +118,15 @@ static const char Pad64 = '=';
  */
 
 int
-ldns_b64_pton(char const *origsrc, uint8_t *target, size_t targsize)
+ldns_b64_pton(char const *src, uint8_t *target, size_t targsize)
 {
-	unsigned char const* src = (unsigned char*)origsrc;
 	int tarindex, state, ch;
 	char *pos;
 
 	state = 0;
 	tarindex = 0;
 
-	if (strlen(origsrc) == 0) {
+	if (strlen(src) == 0) {
 		return 0;
 	}
 

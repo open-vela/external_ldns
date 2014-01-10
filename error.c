@@ -36,7 +36,7 @@ ldns_lookup_table ldns_error_str[] = {
         { LDNS_STATUS_NETWORK_ERR, "Could not send or receive, because of network error" },
         { LDNS_STATUS_ADDRESS_ERR, "Could not start AXFR, because of address error" },
         { LDNS_STATUS_FILE_ERR, "Could not open the files" },
-        { LDNS_STATUS_UNKNOWN_INET, "Unknown address family" },
+        { LDNS_STATUS_UNKNOWN_INET, "Uknown address family" },
         { LDNS_STATUS_NOT_IMPL, "This function is not implemented (yet), please notify the developers - or not..." },
 	{ LDNS_STATUS_NULL, "Supplied value pointer null" },
         { LDNS_STATUS_CRYPTO_UNKNOWN_ALGO, "Unknown cryptographic algorithm" },
@@ -143,20 +143,6 @@ ldns_lookup_table ldns_error_str[] = {
         { LDNS_STATUS_INVALID_RDF_TYPE, 
 		"The rdata field was not of the expected type" },
         { LDNS_STATUS_RDATA_OVERFLOW, "Rdata size overflow" },
-	{ LDNS_STATUS_SYNTAX_SUPERFLUOUS_TEXT_ERR,
-		"Syntax error, superfluous text present" },
-        { LDNS_STATUS_NSEC3_DOMAINNAME_OVERFLOW,
-		"The NSEC3 domainname length overflow" },
-#if OPENSSL_VERSION_NUMBER < 0x10100000 || defined(HAVE_LIBRESSL)
-        { LDNS_STATUS_DANE_NEED_OPENSSL_GE_1_1_FOR_DANE_TA,
-		"ldns needs to be linked with OpenSSL >= 1.1.0 to be able "
-       		"to verify the DANE-TA usage type." },
-#else
-        { LDNS_STATUS_DANE_NEED_OPENSSL_GE_1_1_FOR_DANE_TA,
-		"ldns depends on the availability of the SSL_get0_dane() and "
-		"X509_STORE_CTX_set0_dane() functions within OpenSSL >= 1.1.0 "
-		"to be able to verify the DANE-TA usage type." },
-#endif
 	{ 0, NULL }
 };
 

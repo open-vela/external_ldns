@@ -62,7 +62,7 @@ ldns_rdf *ldns_dname_cat_clone(const ldns_rdf *rd1, const ldns_rdf *rd2);
  * \param[in] rd2 the rightside
  * \return LDNS_STATUS_OK on success
  */
-ldns_status 	ldns_dname_cat(ldns_rdf *rd1, const ldns_rdf *rd2);
+ldns_status 	ldns_dname_cat(ldns_rdf *rd1, ldns_rdf *rd2);
 
 /**
  * Returns a clone of the given dname with the labels
@@ -108,8 +108,7 @@ uint8_t  ldns_dname_label_count(const ldns_rdf *r);
 ldns_rdf *ldns_dname_new_frm_str(const char *str);
 
 /**
- * Create a new dname rdf from a string. The data pointer
- * is stored in the rdf, not a copy of the data
+ * Create a new dname rdf from a string
  * \param[in] s the size of the new dname
  * \param[in] *data pointer to the actual data
  *
@@ -134,7 +133,7 @@ ldns_rdf *ldns_dname_new_frm_data(uint16_t size, const void *data);
 void ldns_dname2canonical(const ldns_rdf *rdf);
 
 /**
- * test whether the name sub falls under parent (i.e. is a subdomain
+ * test wether the name sub falls under parent (i.e. is a subdomain
  * of parent). This function will return false if the given dnames are
  * equal.
  * \param[in] sub the name to test
@@ -151,7 +150,6 @@ bool ldns_dname_is_subdomain(const ldns_rdf *sub, const ldns_rdf *parent);
  * \return -1 if dname1 comes before dname2, 1 if dname1 comes after dname2, and 0 if they are equal.
  */
 int ldns_dname_compare(const ldns_rdf *dname1, const ldns_rdf *dname2);
-int ldns_dname_compare_v(const void *, const void *);
 
 /**
  * Checks whether the dname matches the given wildcard
@@ -166,7 +164,7 @@ int ldns_dname_match_wildcard(const ldns_rdf *dname, const ldns_rdf *wildcard);
 
 /**
  * check if middle lays in the interval defined by prev and next
- * prev <= middle < next. This is useful for nsec checking
+ * prev <= middle < next. This is usefull for nsec checking
  * \param[in] prev the previous dname
  * \param[in] middle the dname to check
  * \param[in] next the next dname

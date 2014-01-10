@@ -75,7 +75,7 @@ ldns_duration_create(void)
  *
  */
 int
-ldns_duration_compare(const ldns_duration_type* d1, const ldns_duration_type* d2)
+ldns_duration_compare(ldns_duration_type* d1, ldns_duration_type* d2)
 {
     if (!d1 && !d2) {
         return 0;
@@ -197,17 +197,14 @@ ldns_duration_create_from_string(const char* str)
 static size_t
 digits_in_number(time_t duration)
 {
-	unsigned int i = (unsigned int) duration;
-	size_t n = 1;
+    uint32_t period = (uint32_t) duration;
+    size_t count = 0;
 
-	while (i >= 100000000) {
-		n += 8;
-		i /= 100000000;
-	}
-	if (i >= 10000) { n += 4; i /= 10000; }
-	if (i >= 100  ) { n += 2; i /= 100; }
-	if (i >= 10   ) { n += 1; }
-	return n;
+    while (period > 0) {
+        count++;
+        period /= 10;
+    }
+    return count;
 }
 
 
@@ -216,12 +213,11 @@ digits_in_number(time_t duration)
  *
  */
 char*
-ldns_duration2string(const ldns_duration_type* duration)
+ldns_duration2string(ldns_duration_type* duration)
 {
-    char* str = NULL;
+    char* str = NULL, *num = NULL;
     size_t count = 2;
     int T = 0;
-    char num[sizeof(unsigned int) + 2];
 
     if (!duration) {
         return NULL;
@@ -255,55 +251,61 @@ ldns_duration2string(const ldns_duration_type* duration)
         count++;
     }
 
-    if (!(str = (char*) calloc(count, sizeof(char))))
-	    return NULL;
+    str = (char*) calloc(count, sizeof(char));
     str[0] = 'P';
     str[1] = '\0';
 
     if (duration->years > 0) {
         count = digits_in_number(duration->years);
-	assert(count <= sizeof(num) - 2);
+        num = (char*) calloc(count+2, sizeof(char));
         snprintf(num, count+2, "%uY", (unsigned int) duration->years);
         str = strncat(str, num, count+2);
+        free((void*) num);
     }
     if (duration->months > 0) {
         count = digits_in_number(duration->months);
-	assert(count <= sizeof(num) - 2);
+        num = (char*) calloc(count+2, sizeof(char));
         snprintf(num, count+2, "%uM", (unsigned int) duration->months);
         str = strncat(str, num, count+2);
+        free((void*) num);
     }
     if (duration->weeks > 0) {
         count = digits_in_number(duration->weeks);
-	assert(count <= sizeof(num) - 2);
+        num = (char*) calloc(count+2, sizeof(char));
         snprintf(num, count+2, "%uW", (unsigned int) duration->weeks);
         str = strncat(str, num, count+2);
+        free((void*) num);
     }
     if (duration->days > 0) {
         count = digits_in_number(duration->days);
-	assert(count <= sizeof(num) - 2);
+        num = (char*) calloc(count+2, sizeof(char));
         snprintf(num, count+2, "%uD", (unsigned int) duration->days);
         str = strncat(str, num, count+2);
+        free((void*) num);
     }
     if (T) {
         str = strncat(str, "T", 1);
     }
     if (duration->hours > 0) {
         count = digits_in_number(duration->hours);
-	assert(count <= sizeof(num) - 2);
+        num = (char*) calloc(count+2, sizeof(char));
         snprintf(num, count+2, "%uH", (unsigned int) duration->hours);
         str = strncat(str, num, count+2);
+        free((void*) num);
     }
     if (duration->minutes > 0) {
         count = digits_in_number(duration->minutes);
-	assert(count <= sizeof(num) - 2);
+        num = (char*) calloc(count+2, sizeof(char));
         snprintf(num, count+2, "%uM", (unsigned int) duration->minutes);
         str = strncat(str, num, count+2);
+        free((void*) num);
     }
     if (duration->seconds > 0) {
         count = digits_in_number(duration->seconds);
-	assert(count <= sizeof(num) - 2);
+        num = (char*) calloc(count+2, sizeof(char));
         snprintf(num, count+2, "%uS", (unsigned int) duration->seconds);
         str = strncat(str, num, count+2);
+        free((void*) num);
     }
     return str;
 }
@@ -314,7 +316,7 @@ ldns_duration2string(const ldns_duration_type* duration)
  *
  */
 time_t
-ldns_duration2time(const ldns_duration_type* duration)
+ldns_duration2time(ldns_duration_type* duration)
 {
     time_t period = 0;
 

@@ -15,13 +15,13 @@
 /** print error details */
 static int verb = 1;
 
-static struct sockaddr_in6* cast_sockaddr_storage2sockaddr_in6(
+struct sockaddr_in6* cast_sockaddr_storage2sockaddr_in6(
 		struct sockaddr_storage* s)
 {
 	return (struct sockaddr_in6*)s;
 }
 
-static struct sockaddr_in* cast_sockaddr_storage2sockaddr_in(
+struct sockaddr_in* cast_sockaddr_storage2sockaddr_in(
 		struct sockaddr_storage* s)
 {
 	return (struct sockaddr_in*)s;

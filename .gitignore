@@ -1,5 +1,4 @@
 /.libs/
-.*.swp
 /_ldns.la
 /Makefile
 /aclocal.m4
@@ -11,10 +10,6 @@
 /compat/b64_ntop.o
 /compat/b64_pton.lo
 /compat/b64_pton.o
-/compat/strlcpy.o
-/compat/strlcpy.lo
-/compat/timegm.o
-/compat/timegm.lo
 /config.guess
 /config.h
 /config.log
@@ -147,7 +142,6 @@
 /host2wire.lo
 /host2wire.o
 /include/
-/install-sh
 /keys.lo
 /keys.o
 /ldns/common.h
@@ -165,8 +159,7 @@
 /linktest.lo
 /linktest.o
 /ltmain.sh
-/m4/lt*.m4
-/m4/libtool.m4
+/m4/
 /net.lo
 /net.o
 /packaging/ldns-config

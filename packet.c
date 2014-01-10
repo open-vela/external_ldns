@@ -26,7 +26,6 @@
  */
 
 #define LDNS_EDNS_MASK_DO_BIT 0x8000
-#define LDNS_EDNS_MASK_UNASSIGNED (0xFFFF & ~LDNS_EDNS_MASK_DO_BIT)
 
 /* TODO defines for 3600 */
 /* convert to and from numerical flag values */
@@ -243,19 +242,6 @@ ldns_pkt_set_edns_do(ldns_pkt *packet, bool value)
 	}
 }
 
-uint16_t
-ldns_pkt_edns_unassigned(const ldns_pkt *packet)
-{
-	return (packet->_edns_z & LDNS_EDNS_MASK_UNASSIGNED);
-}
-
-void
-ldns_pkt_set_edns_unassigned(ldns_pkt *packet, uint16_t value)
-{
-	packet->_edns_z = (packet->_edns_z & ~LDNS_EDNS_MASK_UNASSIGNED)
-			| (value & LDNS_EDNS_MASK_UNASSIGNED);
-}
-
 ldns_rdf *
 ldns_pkt_edns_data(const ldns_pkt *packet)
 {
@@ -264,8 +250,8 @@ ldns_pkt_edns_data(const ldns_pkt *packet)
 
 /* return only those rr that share the ownername */
 ldns_rr_list *
-ldns_pkt_rr_list_by_name(const ldns_pkt *packet,
-                         const ldns_rdf *ownername,
+ldns_pkt_rr_list_by_name(ldns_pkt *packet,
+                         ldns_rdf *ownername,
                          ldns_pkt_section sec)
 {
 	ldns_rr_list *rrs;
@@ -287,15 +273,9 @@ ldns_pkt_rr_list_by_name(const ldns_pkt *packet,
 			if (ret == NULL) {
 				ret = ldns_rr_list_new();
 			}
-			ldns_rr_list_push_rr(ret,
-					     ldns_rr_clone(
-						ldns_rr_list_rr(rrs, i))
-					    );
+			ldns_rr_list_push_rr(ret, ldns_rr_list_rr(rrs, i));
 		}
 	}
-
-	ldns_rr_list_deep_free(rrs);
-
 	return ret;
 }
 
@@ -374,7 +354,7 @@ ldns_pkt_rr_list_by_name_and_type(const ldns_pkt *packet,
 }
 
 bool
-ldns_pkt_rr(const ldns_pkt *pkt, ldns_pkt_section sec, const ldns_rr *rr)
+ldns_pkt_rr(ldns_pkt *pkt, ldns_pkt_section sec, ldns_rr *rr)
 {
 	bool result = false;
 
@@ -389,7 +369,6 @@ ldns_pkt_rr(const ldns_pkt *pkt, ldns_pkt_section sec, const ldns_rr *rr)
 		return ldns_rr_list_contains_rr(ldns_pkt_additional(pkt), rr);
 	case LDNS_SECTION_ANY:
 		result = ldns_rr_list_contains_rr(ldns_pkt_question(pkt), rr);
-		/* fallthrough */
 	case LDNS_SECTION_ANY_NOQUESTION:
 		result = result
 		    || ldns_rr_list_contains_rr(ldns_pkt_answer(pkt), rr)
@@ -742,8 +721,7 @@ ldns_pkt_edns(const ldns_pkt *pkt) {
 	return (ldns_pkt_edns_udp_size(pkt) > 0 ||
 		ldns_pkt_edns_extended_rcode(pkt) > 0 ||
 		ldns_pkt_edns_data(pkt) ||
-		ldns_pkt_edns_do(pkt) ||
-                pkt->_edns_present
+		ldns_pkt_edns_do(pkt)
 	       );
 }
 
@@ -796,7 +774,6 @@ ldns_pkt_new(void)
 	ldns_pkt_set_edns_version(packet, 0);
 	ldns_pkt_set_edns_z(packet, 0);
 	ldns_pkt_set_edns_data(packet, NULL);
-	packet->_edns_present = false;
 	
 	ldns_pkt_set_tsig(packet, NULL);
 	
@@ -851,7 +828,7 @@ ldns_pkt_set_flags(ldns_pkt *packet, uint16_t flags)
 
 
 static ldns_rr*
-ldns_pkt_authsoa(const ldns_rdf* rr_name, ldns_rr_class rr_class)
+ldns_pkt_authsoa(ldns_rdf* rr_name, ldns_rr_class rr_class)
 {
 	ldns_rr* soa_rr = ldns_rr_new();
 	ldns_rdf *owner_rdf;
@@ -1074,7 +1051,7 @@ ldns_pkt_ixfr_request_new(ldns_rdf *rr_name, ldns_rr_class rr_class,
 }
 
 ldns_pkt_type
-ldns_pkt_reply_type(const ldns_pkt *p)
+ldns_pkt_reply_type(ldns_pkt *p)
 {
 	ldns_rr_list *tmp;
 
@@ -1120,7 +1097,7 @@ ldns_pkt_reply_type(const ldns_pkt *p)
 }
 
 ldns_pkt *
-ldns_pkt_clone(const ldns_pkt *pkt)
+ldns_pkt_clone(ldns_pkt *pkt)
 {
 	ldns_pkt *new_pkt;
 	
@@ -1146,7 +1123,6 @@ ldns_pkt_clone(const ldns_pkt *pkt)
 	if (ldns_pkt_answerfrom(pkt))
 		ldns_pkt_set_answerfrom(new_pkt,
 			ldns_rdf_clone(ldns_pkt_answerfrom(pkt)));
-	ldns_pkt_set_timestamp(new_pkt, ldns_pkt_timestamp(pkt));
 	ldns_pkt_set_querytime(new_pkt, ldns_pkt_querytime(pkt));
 	ldns_pkt_set_size(new_pkt, ldns_pkt_size(pkt));
 	ldns_pkt_set_tsig(new_pkt, ldns_rr_clone(ldns_pkt_tsig(pkt)));
@@ -1155,7 +1131,6 @@ ldns_pkt_clone(const ldns_pkt *pkt)
 	ldns_pkt_set_edns_extended_rcode(new_pkt, 
 		ldns_pkt_edns_extended_rcode(pkt));
 	ldns_pkt_set_edns_version(new_pkt, ldns_pkt_edns_version(pkt));
-	new_pkt->_edns_present = pkt->_edns_present;
 	ldns_pkt_set_edns_z(new_pkt, ldns_pkt_edns_z(pkt));
 	if(ldns_pkt_edns_data(pkt))
 		ldns_pkt_set_edns_data(new_pkt, 
