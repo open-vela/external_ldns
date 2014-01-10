@@ -13,9 +13,8 @@
 # older versions of libtoolize do not support --install
 # so you might need to remove that (with newer versions
 # it is needed)
-git submodule update --init
-libtoolize -ci
-autoreconf -fi
+libtoolize -c --install
+autoreconf --install
 ./configure --with-examples --with-drill # --with-pyldns --with-p5-dns-ldns
 make
 make doc  # needs doxygen for the html pages

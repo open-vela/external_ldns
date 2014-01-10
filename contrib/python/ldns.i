@@ -126,9 +126,6 @@ uint32_t ldns_read_timeval_usec(struct timeval* t) {
 %immutable ldns_struct_rr_descriptor::_name;
 %immutable ldns_error_str;
 %immutable ldns_signing_algorithms;
-%immutable ldns_tsig_credentials_struct::algorithm;
-%immutable ldns_tsig_credentials_struct::keyname;
-%immutable ldns_tsig_credentials_struct::keydata;
 
 //*_new_frm_fp_l
 %apply int *OUTPUT { (int *line_nr) };
@@ -141,8 +138,6 @@ uint32_t ldns_read_timeval_usec(struct timeval* t) {
 %include "ldns_packet.i"
 %include "ldns_resolver.i"
 %include "ldns_rr.i"
-
-%include <ldns/rr.h>
 
 %inline %{
 int Python_str_Check(PyObject *o) {
@@ -173,6 +168,7 @@ int Python_str_Check(PyObject *o) {
   %include <ldns/packet.h>
   %include <ldns/rdata.h>
   %include <ldns/resolver.h>
+  %include <ldns/rr.h>
 %include <ldns/str2host.h>
 %include <ldns/tsig.h>
   %include <ldns/update.h>
@@ -399,28 +395,6 @@ PyObject* ldns_wire2pkt_(const char *str, int len)
   return tuple;
 }
 
-PyObject* ldns_pkt2wire_(const ldns_pkt *pkt)
- //returns tuple (status, result)
- {
-  PyObject *resultobj = 0;
-  uint8_t *arg1 = NULL;
-  size_t arg3;
-  ldns_status result;
-  PyObject* tuple;
-
-  result = (ldns_status)ldns_pkt2wire(&arg1,pkt,&arg3);
-  tuple = PyTuple_New(2);
-  PyTuple_SetItem(tuple, 0, SWIG_From_int(result));
-  if (result == LDNS_STATUS_OK)
-     PyTuple_SetItem(tuple, 1, SWIG_FromCharPtrAndSize((char *)arg1, arg3));
-  else {
-     Py_INCREF(Py_None);
-     PyTuple_SetItem(tuple, 1, Py_None);
-  }
-  LDNS_FREE(arg1);
-  return tuple;
-}
-
 %}
 
 %pythoncode %{
@@ -429,9 +403,6 @@ def ldns_fetch_valid_domain_keys(res, domain, keys):
 
 def ldns_wire2pkt(data):
     return _ldns.ldns_wire2pkt_(data)
-
-def ldns_pkt2wire(data):
-    return _ldns.ldns_pkt2wire_(data)
 
 def ldns_rr_iter_frm_fp_l(input_file):
     """Creates an iterator (generator) that returns individual parsed

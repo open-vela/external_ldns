@@ -920,7 +920,7 @@ match_opcode(type_operator operator,
 		a = lt->id;
 	} else {
 		i = atoi(value);
-		if (i >= 0 && isdigit((unsigned char)value[0])) {
+		if (i >= 0 && !isdigit(value[0]) == 0) {
 			lt = ldns_lookup_by_id(ldns_opcodes, i);
 			if (lt) {
 				a = lt->id;
@@ -941,7 +941,7 @@ match_opcode(type_operator operator,
 		b = lt->id;
 	} else {
 		i = atoi(mvalue);
-		if (i >= 0 && isdigit((unsigned char)mvalue[0])) {
+		if (i >= 0 && !isdigit(mvalue[0]) == 0) {
 			lt = ldns_lookup_by_id(ldns_opcodes, i);
 			if (lt) {
 				b = lt->id;
@@ -1053,7 +1053,7 @@ match_rcode(type_operator operator,
 		a = lt->id;
 	} else {
 		i = atoi(value);
-		if (i >= 0 && isdigit((unsigned char)value[0])) {
+		if (i >= 0 && !isdigit(value[0]) == 0) {
 			lt = ldns_lookup_by_id(ldns_rcodes, i);
 			if (lt) {
 				a = lt->id;
@@ -1074,7 +1074,8 @@ match_rcode(type_operator operator,
 		b = lt->id;
 	} else {
 		i = atoi(mvalue);
-		if (i >= 0 && isdigit((unsigned char)mvalue[0])) {
+
+		if (i >= 0 && !isdigit(mvalue[0]) == 0) {
 			lt = ldns_lookup_by_id(ldns_rcodes, i);
 			if (lt) {
 				b = lt->id;
@@ -1662,7 +1663,7 @@ parse_match_expression(char *string)
 
 	j = 0;
 	for (i = 0; i < strlen(string); i++) {
-		if(!isspace((unsigned char)string[i])) {
+		if(!isspace(string[i])) {
 			str[j] = string[i];
 			j++;
 		}
@@ -1914,7 +1915,7 @@ usage(FILE *output)
 	fprintf(output, "\t-u <matchnamelist>:\tCount all occurrences of matchname\n");
 	fprintf(output, "\t-ua:\t\tShow average value of every -u matchname\n");
 	fprintf(output, "\t-uac:\t\tShow average count of every -u matchname\n");
-	fprintf(output, "\t-um <number>:\tOnly show -u results that occurred more than number times\n");
+	fprintf(output, "\t-um <number>:\tOnly show -u results that occured more than number times\n");
 	fprintf(output, "\t-v <level>:\tbe more verbose\n");
 	fprintf(output, "\t-notip <file>:\tDump pcap packets that were not recognized as\n\t\t\tIP packets to file\n");
 	fprintf(output, "\t-baddns <file>:\tDump mangled dns packets to file\n");
@@ -2504,7 +2505,7 @@ parse_uniques(match_id ids[], size_t *count, char *string)
 	str = malloc(strlen(string) + 1);
 	j = 0;
 	for (i = 0; i < strlen(string); i++) {
-		if (!isspace((unsigned char)string[i])) {
+		if (!isspace(string[i])) {
 			str[j] = string[i];
 			j++;
 		}

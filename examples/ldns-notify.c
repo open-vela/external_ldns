@@ -29,9 +29,7 @@ usage(void)
 	fprintf(stderr, " Supported options:\n");
 	fprintf(stderr, "\t-z zone\t\tThe zone\n");
 	fprintf(stderr, "\t-s version\tSOA version number to include\n");
-	fprintf(stderr, "\t-y <name:key[:algo]>\tspecify named base64 tsig key"
-	                ", and optional an\n\t\t\t"
-	                "algorithm (defaults to hmac-md5.sig-alg.reg.int)\n");
+	fprintf(stderr, "\t-y key:data\tTSIG sign the query\n");
 	fprintf(stderr, "\t-p port\t\tport to use to send to\n");
 	fprintf(stderr, "\t-v\t\tPrint version information\n");
 	fprintf(stderr, "\t-d\t\tPrint verbose debug information\n");
@@ -179,12 +177,11 @@ main(int argc, char **argv)
 	const char *zone_name = NULL;
 	int include_soa = 0;
 	uint32_t soa_version = 0;
+	ldns_tsig_credentials tsig_cred = {0,0,0};
 	int do_hexdump = 1;
 	uint8_t *wire = NULL;
 	size_t wiresize = 0;
 	const char *port = "53";
-	char *tsig_sep;
-	const char *tsig_name = NULL, *tsig_data = NULL, *tsig_algo = NULL;
 
 	srandom(time(NULL) ^ getpid());
 
@@ -204,52 +201,18 @@ main(int argc, char **argv)
 			soa_version = (uint32_t)atoi(optarg);
 			break;
                 case 'y':
-			if (!(tsig_sep = strchr(optarg, ':'))) {
+			tsig_cred.algorithm = (char*)"hmac-md5.sig-alg.reg.int.";
+			tsig_cred.keyname = optarg;
+			tsig_cred.keydata = strchr(optarg, ':');
+			if (tsig_cred.keydata == NULL) {
 				printf("TSIG argument is not in form "
-					"<name:key[:algo]> %s\n", optarg);
+					"key:data: %s\n", optarg);
 				exit(1);
 			}
-			tsig_name = optarg;
-			*tsig_sep++ = '\0';
-			tsig_data = tsig_sep;
-			if ((tsig_sep = strchr(tsig_sep, ':'))) {
-				*tsig_sep++ = '\0';
-				tsig_algo = tsig_sep;
-			} else {
-				tsig_algo = "hmac-md5.sig-alg.reg.int.";
-			}
-			/* With dig TSIG keys are also specified with -y,
-			 * but format with drill is: -y <name:key[:algo]>
-			 *             and with dig: -y [hmac:]name:key
-			 *
-			 * When we detect an unknown tsig algorithm in algo,
-			 * but a known algorithm in name, we cane assume dig
-			 * order was used.
-			 *
-			 * Following if statement is to anticipate and correct
-			 * dig order
-			 */
-			if (strcasecmp(tsig_algo, "hmac-md5.sig-alg.reg.int")&&
-			    strcasecmp(tsig_algo, "hmac-md5")                &&
-			    strcasecmp(tsig_algo, "hmac-sha1")               &&
-			    strcasecmp(tsig_algo, "hmac-sha256")             &&
-			    strcasecmp(tsig_algo, "hmac-sha384")             &&
-			    strcasecmp(tsig_algo, "hmac-sha512")             &&
-			    ! (strcasecmp(tsig_name, "hmac-md5.sig-alg.reg.int")
-			    && strcasecmp(tsig_name, "hmac-md5")
-			    && strcasecmp(tsig_name, "hmac-sha1")
-			    && strcasecmp(tsig_name, "hmac-sha256")
-			    && strcasecmp(tsig_name, "hmac-sha384")
-			    && strcasecmp(tsig_name, "hmac-sha512"))) {
-
-				/* Roll options */
-				const char *tmp_tsig_algo = tsig_name;
-				tsig_name = tsig_data;
-				tsig_data = tsig_algo;
-				tsig_algo = tmp_tsig_algo;
-			}	
-			printf("Sign with name: %s, data: %s, algorithm: %s\n"
-			      , tsig_name, tsig_data, tsig_algo);
+			*tsig_cred.keydata = '\0';
+			tsig_cred.keydata++;
+			printf("Sign with %s : %s\n", tsig_cred.keyname,
+				tsig_cred.keydata);
 			break;
                 case 'z':
 			zone_name = optarg;
@@ -262,7 +225,6 @@ main(int argc, char **argv)
                         break;
 		case 'v':
 			version();
-			/* fallthrough */
                 case 'h':
                 case '?':
                 default:
@@ -309,10 +271,11 @@ main(int argc, char **argv)
 		ldns_pkt_push_rr(notify, LDNS_SECTION_ANSWER, soa_rr);
 	}
 
-	if(tsig_name && tsig_data) {
+	if(tsig_cred.keyname) {
 #ifdef HAVE_SSL
-		status = ldns_pkt_tsig_sign(notify, tsig_name,
-			tsig_data, 300, tsig_algo, NULL);
+		status = ldns_pkt_tsig_sign(notify, tsig_cred.keyname,
+			tsig_cred.keydata, 300, tsig_cred.algorithm,
+			NULL);
 		if(status != LDNS_STATUS_OK) {
 			printf("Error TSIG sign query: %s\n",
 				ldns_get_errorstr_by_id(status));
@@ -343,7 +306,7 @@ main(int argc, char **argv)
 
 	for(i=0; i<argc; i++)
 	{
-		struct addrinfo hints, *res0, *ai_res;
+		struct addrinfo hints, *res0, *res;
 		int error;
 		int default_family = AF_INET;
 
@@ -351,7 +314,6 @@ main(int argc, char **argv)
 			printf("# sending to %s\n", argv[i]);
 		memset(&hints, 0, sizeof(hints));
 		hints.ai_family = default_family;
-		if(strchr(argv[i], ':')) hints.ai_family = AF_INET6;
 		hints.ai_socktype = SOCK_DGRAM;
 		hints.ai_protocol = IPPROTO_UDP;
 		error = getaddrinfo(argv[i], port, &hints, &res0);
@@ -360,13 +322,13 @@ main(int argc, char **argv)
 				gai_strerror(error));
 			continue;
 		}
-		for (ai_res = res0; ai_res; ai_res = ai_res->ai_next) {
-			int s = socket(ai_res->ai_family, ai_res->ai_socktype, 
-				ai_res->ai_protocol);
+		for (res = res0; res; res = res->ai_next) {
+			int s = socket(res->ai_family, res->ai_socktype, 
+				res->ai_protocol);
 			if(s == -1)
 				continue;
 			/* send the notify */
-			notify_host(s, ai_res, wire, wiresize, argv[i]);
+			notify_host(s, res, wire, wiresize, argv[i]);
 		}
 		freeaddrinfo(res0);
 	}

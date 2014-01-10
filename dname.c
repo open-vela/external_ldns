@@ -87,7 +87,7 @@ ldns_dname_cat_clone(const ldns_rdf *rd1, const ldns_rdf *rd2)
 }
 
 ldns_status
-ldns_dname_cat(ldns_rdf *rd1, const ldns_rdf *rd2)
+ldns_dname_cat(ldns_rdf *rd1, ldns_rdf *rd2)
 {
 	uint16_t left_size;
 	uint16_t size;
@@ -251,9 +251,6 @@ ldns_dname_new(uint16_t s, void *d)
 {
         ldns_rdf *rd;
 
-        if (!s || !d) {
-                return NULL;
-        }
         rd = LDNS_MALLOC(ldns_rdf);
         if (!rd) {
                 return NULL;
@@ -530,11 +527,10 @@ ldns_dname_str_absolute(const char *dname_str)
         for(s=dname_str; *s; s++) {
                 if(*s == '\\') {
                         if(s[1] && s[2] && s[3] /* check length */
-                                && isdigit((unsigned char)s[1])
-				&& isdigit((unsigned char)s[2])
-				&& isdigit((unsigned char)s[3]))
+                                && isdigit(s[1]) && isdigit(s[2]) && 
+                                isdigit(s[3]))
                                 s += 3;
-                        else if(!s[1] || isdigit((unsigned char)s[1])) /* escape of nul,0-9 */
+                        else if(!s[1] || isdigit(s[1])) /* escape of nul,0-9 */
                                 return 0; /* parse error */
                         else s++; /* another character escaped */
                 }
