@@ -351,6 +351,7 @@ ldns_rr_new_frm_str_internal(ldns_rr **newrr, const char *str,
 							delimiters = "\n";
 							break;
 						}
+						/* fallthrough */
 		default                       :	delimiters = "\n\t "; 
 		}
 
@@ -2037,6 +2038,16 @@ static const ldns_rdf_type type_caa_wireformat[] = {
 	LDNS_RDF_TYPE_TAG,
 	LDNS_RDF_TYPE_LONG_STR
 };
+#ifdef RRTYPE_DOA
+static const ldns_rdf_type type_doa_wireformat[] = {
+	LDNS_RDF_TYPE_INT32,
+	LDNS_RDF_TYPE_INT32,
+	LDNS_RDF_TYPE_INT8,
+	LDNS_RDF_TYPE_STR,
+	LDNS_RDF_TYPE_B64
+};
+#endif
+
 /** \endcond */
 
 /** \cond */
@@ -2425,6 +2436,12 @@ static ldns_rr_descriptor rdata_field_descriptors[] = {
 #else
 {LDNS_RR_TYPE_NULL, "TYPE258", 1, 1, type_0_wireformat, LDNS_RDF_TYPE_NONE, LDNS_RR_NO_COMPRESS, 0 },
 #endif
+#ifdef RRTYPE_DOA
+	/* 259 */
+	{LDNS_RR_TYPE_DOA, "DOA", 5, 5, type_doa_wireformat, LDNS_RDF_TYPE_NONE, LDNS_RR_NO_COMPRESS, 0 },
+#else
+{LDNS_RR_TYPE_NULL, "TYPE259", 1, 1, type_0_wireformat, LDNS_RDF_TYPE_NONE, LDNS_RR_NO_COMPRESS, 0 },
+#endif
 
 /* split in array, no longer contiguous */
 
@@ -2528,10 +2545,10 @@ ldns_rdf_bitmap_known_rr_types_set(ldns_rdf** rdf, int value)
 		/* Format rdf data according RFC3845 Section 2.1.2 (see above)
 		 */
 		dptr = data = LDNS_XMALLOC(uint8_t, sz);
-		memset(data, value, sz);
 		if (!data) {
 			return LDNS_STATUS_MEM_ERR;
 		}
+		memset(data, value, sz);
 		for (i = 0; i < 256; i++) {
 			if (windows[i]) {
 				*dptr++ = (uint8_t)i;

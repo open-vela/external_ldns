@@ -476,8 +476,17 @@ ldns_status
 ldns_rdf2buffer_str_b64(ldns_buffer *output, const ldns_rdf *rdf)
 {
 	size_t size = ldns_b64_ntop_calculate_size(ldns_rdf_size(rdf));
-	char *b64 = LDNS_XMALLOC(char, size);
-	if(!b64) return LDNS_STATUS_MEM_ERR;
+	char *b64;
+
+	if (ldns_rdf_size(rdf) == 0) {
+		ldns_buffer_printf(output, "0");
+		return ldns_buffer_status(output);
+	} else
+		size = ldns_b64_ntop_calculate_size(ldns_rdf_size(rdf));
+
+	if (!(b64 = LDNS_XMALLOC(char, size)))
+		return LDNS_STATUS_MEM_ERR;
+
 	if (ldns_b64_ntop(ldns_rdf_data(rdf), ldns_rdf_size(rdf), b64, size)) {
 		ldns_buffer_printf(output, "%s", b64);
 	}
@@ -1929,6 +1938,63 @@ ldns_gost_key2buffer_str(ldns_buffer *output, EVP_PKEY *p)
 }
 #endif
 
+#if defined(HAVE_SSL) && defined(USE_ED25519)
+static ldns_status
+ldns_ed25519_key2buffer_str(ldns_buffer *output, EVP_PKEY *p)
+{
+	unsigned char* pp = NULL;
+	int ret;
+	ldns_rdf *b64_bignum;
+	ldns_status status;
+
+	ldns_buffer_printf(output, "PrivateKey: ");
+
+	ret = i2d_PrivateKey(p, &pp);
+	/* 16 byte asn (302e020100300506032b657004220420) + 32byte key */
+	if(ret != 16 + 32) {
+		OPENSSL_free(pp);
+		return LDNS_STATUS_ERR;
+	}
+	b64_bignum = ldns_rdf_new_frm_data(LDNS_RDF_TYPE_B64,
+		(size_t)ret-16, pp+16);
+	status = ldns_rdf2buffer_str(output, b64_bignum);
+
+	ldns_rdf_deep_free(b64_bignum);
+	OPENSSL_free(pp);
+	ldns_buffer_printf(output, "\n");
+	return status;
+}
+#endif
+
+#if defined(HAVE_SSL) && defined(USE_ED448)
+static ldns_status
+ldns_ed448_key2buffer_str(ldns_buffer *output, EVP_PKEY *p)
+{
+	unsigned char* pp = NULL;
+	int ret;
+	ldns_rdf *b64_bignum;
+	ldns_status status;
+
+	ldns_buffer_printf(output, "PrivateKey: ");
+
+	ret = i2d_PrivateKey(p, &pp);
+	/* some-ASN + 57byte key */
+	if(ret != 16 + 57) {
+		OPENSSL_free(pp);
+		return LDNS_STATUS_ERR;
+	}
+	b64_bignum = ldns_rdf_new_frm_data(LDNS_RDF_TYPE_B64,
+		(size_t)ret-16, pp+16);
+	status = ldns_rdf2buffer_str(output, b64_bignum);
+
+	ldns_rdf_deep_free(b64_bignum);
+	OPENSSL_free(pp);
+	ldns_buffer_printf(output, "\n");
+	return status;
+}
+#endif
+
+#if defined(HAVE_SSL)
 /** print one b64 encoded bignum to a line in the keybuffer */
 static int
 ldns_print_bignum_b64_line(ldns_buffer* output, const char* label, const BIGNUM* num)
@@ -1958,6 +2024,7 @@ ldns_print_bignum_b64_line(ldns_buffer* output, const char* label, const BIGNUM*
 	LDNS_FREE(bignumbuf);
 	return 1;
 }
+#endif
 
 ldns_status
 ldns_key2buffer_str(ldns_buffer *output, const ldns_key *k)
@@ -2160,16 +2227,8 @@ ldns_key2buffer_str(ldns_buffer *output, const ldns_key *k)
 				ldns_buffer_printf(output, "Algorithm: %d (", ldns_key_algorithm(k));
                                 status=ldns_algorithm2buffer_str(output, (ldns_algorithm)ldns_key_algorithm(k));
 				ldns_buffer_printf(output, ")\n");
-				if(k->_key.key) {
-                                        EC_KEY* ec = EVP_PKEY_get1_EC_KEY(k->_key.key);
-                                        const BIGNUM* b = EC_KEY_get0_private_key(ec);
-					if(!ldns_print_bignum_b64_line(output, "PrivateKey", b))
-						goto error;
-                                        /* down reference count in EC_KEY
-                                         * its still assigned to the PKEY */
-                                        EC_KEY_free(ec);
-				}
-				ldns_buffer_printf(output, "\n");
+				status = ldns_ed25519_key2buffer_str(output,
+					k->_key.key);
 				break;
 #endif /* USE_ED25519 */
 #ifdef USE_ED448
@@ -2178,16 +2237,8 @@ ldns_key2buffer_str(ldns_buffer *output, const ldns_key *k)
 				ldns_buffer_printf(output, "Algorithm: %d (", ldns_key_algorithm(k));
                                 status=ldns_algorithm2buffer_str(output, (ldns_algorithm)ldns_key_algorithm(k));
 				ldns_buffer_printf(output, ")\n");
-				if(k->_key.key) {
-                                        EC_KEY* ec = EVP_PKEY_get1_EC_KEY(k->_key.key);
-                                        const BIGNUM* b = EC_KEY_get0_private_key(ec);
-					if(!ldns_print_bignum_b64_line(output, "PrivateKey", b))
-						goto error;
-                                        /* down reference count in EC_KEY
-                                         * its still assigned to the PKEY */
-                                        EC_KEY_free(ec);
-				}
-				ldns_buffer_printf(output, "\n");
+				status = ldns_ed448_key2buffer_str(output,
+					k->_key.key);
 				break;
 #endif /* USE_ED448 */
 			case LDNS_SIGN_HMACMD5:

@@ -444,7 +444,7 @@ rr_list_filter_rr_type(ldns_rr_list* l, ldns_rr_type t)
  * types "Service certificate constraint" are replaced with 
  * "Domain-issued certificate".
  *
- * This to check what would happen if PKIX validation was successfull always.
+ * This to check what would happen if PKIX validation was successful always.
  */
 static ldns_rr_list*
 dane_no_pkix_transform(const ldns_rr_list* tlas)
@@ -1951,7 +1951,7 @@ main(int argc, char* const* argv)
 
 			default:     break; /* suppress warning */
 			}
-			while (SSL_shutdown(ssl) == 0);
+			(void)SSL_shutdown(ssl);
 			SSL_free(ssl);
 		} /* end for all addresses */
 	} /* end No certification file */

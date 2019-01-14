@@ -461,7 +461,7 @@ ldns_send_buffer(ldns_pkt **result, ldns_resolver *r, ldns_buffer *qb, ldns_rdf 
 	uint8_t i;
 
 	struct sockaddr_storage *src = NULL;
-	size_t src_len;
+	size_t src_len = 0;
 	struct sockaddr_storage *ns;
 	size_t ns_len;
 	struct timeval tv_s;
@@ -674,9 +674,6 @@ ldns_udp_send_query(ldns_buffer *qbin, int sockfd, const struct sockaddr_storage
 			ldns_buffer_position(qbin), 0, (struct sockaddr *)to, tolen);
 
 	if (bytes == -1 || (size_t)bytes != ldns_buffer_position(qbin)) {
-		return 0;
-	}
-	if ((size_t) bytes != ldns_buffer_position(qbin)) {
 		return 0;
 	}
 	return bytes;
