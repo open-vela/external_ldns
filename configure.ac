@@ -6,7 +6,7 @@ sinclude(acx_nlnetlabs.m4)
 # must be numbers. ac_defun because of later processing.
 m4_define([VERSION_MAJOR],[1])
 m4_define([VERSION_MINOR],[7])
-m4_define([VERSION_MICRO],[0])
+m4_define([VERSION_MICRO],[1])
 AC_INIT(ldns, m4_defn([VERSION_MAJOR]).m4_defn([VERSION_MINOR]).m4_defn([VERSION_MICRO]), libdns@nlnetlabs.nl, libdns)
 AC_CONFIG_SRCDIR([packet.c])
 # needed to build correct soname
@@ -26,9 +26,10 @@ AC_SUBST(LDNS_VERSION_MICRO, [VERSION_MICRO])
 #   set age to 0
 #
 # ldns-1.6.17 and before had a .so with version same as VERSION_INFO
-# ldns-1.7.0 will have libversion 2:0:0
+# ldns-1.7.0 has libversion 2:0:0
+# ldns-1.7.1 will have libversion 2:1:0
 #
-AC_SUBST(VERSION_INFO, [2:0:0])
+AC_SUBST(VERSION_INFO, [2:1:0])
 
 AC_AIX
 if test "$ac_cv_header_minix_config_h" = "yes"; then
@@ -518,7 +519,7 @@ case "$enable_ed25519" in
       if test "x$HAVE_SSL" != "xyes"; then
         AC_MSG_ERROR([ED25519 enabled, but no SSL support])
       fi
-      AC_CHECK_DECLS([NID_X25519], [], [AC_MSG_ERROR([OpenSSL does not support the EDDSA curve: please upgrade OpenSSL or rerun with --disable-ed25519])], [AC_INCLUDES_DEFAULT
+      AC_CHECK_DECLS([NID_ED25519], [], [AC_MSG_ERROR([OpenSSL does not support the EDDSA curve: please upgrade OpenSSL or rerun with --disable-ed25519])], [AC_INCLUDES_DEFAULT
 #include <openssl/evp.h>
       ])
       AC_DEFINE_UNQUOTED([USE_ED25519], [1], [Define this to enable ED25519 support.])
@@ -533,7 +534,7 @@ case "$enable_ed448" in
       if test "x$HAVE_SSL" != "xyes"; then
         AC_MSG_ERROR([ED448 enabled, but no SSL support])
       fi
-      AC_CHECK_DECLS([NID_X448], [], [AC_MSG_ERROR([OpenSSL does not support the EDDSA curve: please upgrade OpenSSL or rerun with --disable-ed448])], [AC_INCLUDES_DEFAULT
+      AC_CHECK_DECLS([NID_ED448], [], [AC_MSG_ERROR([OpenSSL does not support the EDDSA curve: please upgrade OpenSSL or rerun with --disable-ed448])], [AC_INCLUDES_DEFAULT
 #include <openssl/evp.h>
       ])
       AC_DEFINE_UNQUOTED([USE_ED448], [1], [Define this to enable ED448 support.])
@@ -589,7 +590,7 @@ case "$enable_dane" in
                 *) dnl default
       	    LIBS="-lssl $LIBS"
                   AC_CHECK_FUNC(SSL_get0_dane, [], [AC_MSG_ERROR([OpenSSL does not support offline DANE verification (Needed for the DANE-TA usage type).  Please upgrade OpenSSL to version >= 1.1.0 or rerun with --disable-dane-verify or --disable-dane-ta-usage])])
-                  LIBSSL_LIBS="$LIBSSL_LIBS -lssl"
+                  LIBSSL_LIBS="-lssl $LIBSSL_LIBS"
                   AC_SUBST(ldns_build_config_use_dane_ta_usage, 1)
                   AC_DEFINE_UNQUOTED([USE_DANE_TA_USAGE], [1], [Define this to enable DANE-TA usage type support.])
                   ;;
@@ -638,6 +639,15 @@ case "$enable_rrtype_avc" in
 	no|*)
 		;;
 esac
+AC_ARG_ENABLE(rrtype-doa, AC_HELP_STRING([--enable-rrtype-doa], [Enable draft RR type DOA.]))
+case "$enable_rrtype_doa" in
+	yes)
+		AC_DEFINE_UNQUOTED([RRTYPE_DOA], [], [Define this to enable RR type DOA.])
+		;;
+	no|*)
+		;;
+esac
+
 
 AC_SUBST(LIBSSL_CPPFLAGS)
 AC_SUBST(LIBSSL_LDFLAGS)

@@ -1108,7 +1108,8 @@ ldns_resolver_search_status(ldns_pkt** pkt,
 
 			s = ldns_resolver_query_status(pkt, r,
 					new_name, t, c, flags);
-			ldns_rdf_free(new_name);
+			ldns_rdf_deep_free(new_name);
+
 			if (pkt && *pkt) {
 				if (s == LDNS_STATUS_OK && 
 						ldns_pkt_get_rcode(*pkt) ==
@@ -1132,6 +1133,7 @@ ldns_resolver_search(const ldns_resolver *r,const  ldns_rdf *name,
 	if (ldns_resolver_search_status(&pkt, (ldns_resolver *)r,
 				name, t, c, flags) != LDNS_STATUS_OK) {
 		ldns_pkt_free(pkt);
+		return NULL;
 	}
 	return pkt;
 }
@@ -1165,6 +1167,7 @@ ldns_resolver_query(const ldns_resolver *r, const ldns_rdf *name,
 	if (ldns_resolver_query_status(&pkt, (ldns_resolver *)r,
 				name, t, c, flags) != LDNS_STATUS_OK) {
 		ldns_pkt_free(pkt);
+		return NULL;
 	}
 	return pkt;
 }
@@ -1178,6 +1181,7 @@ ldns_resolver_backup_rtt(ldns_resolver *r)
 	if (old_rtt && ldns_resolver_nameserver_count(r)) {
 		new_rtt = LDNS_XMALLOC(size_t
 				, ldns_resolver_nameserver_count(r));
+		if (!new_rtt) return NULL;
 		memcpy(new_rtt, old_rtt, sizeof(size_t)
 				* ldns_resolver_nameserver_count(r));
 		ldns_resolver_set_rtt(r, new_rtt);
@@ -1240,6 +1244,7 @@ ldns_resolver_send_pkt(ldns_pkt **answer, ldns_resolver *r,
 				    ldns_pkt_tc(answer_pkt)) {
 					ldns_resolver_set_usevc(r, true);
 					ldns_pkt_free(answer_pkt);
+					answer_pkt = NULL;
 					stat = ldns_send(&answer_pkt, r, query_pkt);
 					ldns_resolver_set_usevc(r, false);
 				}

@@ -584,6 +584,11 @@ ldns_str2rdf_b64(ldns_rdf **rd, const char *str)
 	uint8_t *buffer;
 	int16_t i;
 
+	if ((*str == '-' || *str == '0') && str[1] == '\0') {
+		*rd = ldns_rdf_new_frm_data(LDNS_RDF_TYPE_B64, 0, NULL);
+		return *rd ? LDNS_STATUS_OK : LDNS_STATUS_MEM_ERR;
+	}
+
 	buffer = LDNS_XMALLOC(uint8_t, ldns_b64_ntop_calculate_size(strlen(str)));
         if(!buffer) {
                 return LDNS_STATUS_MEM_ERR;
@@ -609,15 +614,19 @@ ldns_str2rdf_b32_ext(ldns_rdf **rd, const char *str)
 	uint8_t *buffer;
 	int i;
 	/* first byte contains length of actual b32 data */
-	uint8_t len = ldns_b32_pton_calculate_size(strlen(str));
+	size_t slen = strlen(str);
+	size_t len = ldns_b32_pton_calculate_size(slen);
+	if (len > 255) {
+		return LDNS_STATUS_INVALID_B32_EXT;
+	}
 	buffer = LDNS_XMALLOC(uint8_t, len + 1);
         if(!buffer) {
                 return LDNS_STATUS_MEM_ERR;
         }
 	buffer[0] = len;
 
-	i = ldns_b32_pton_extended_hex((const char*)str, strlen(str), buffer + 1,
-							 ldns_b32_ntop_calculate_size(strlen(str)));
+	i = ldns_b32_pton_extended_hex((const char*)str, slen, buffer + 1,
+							 ldns_b32_ntop_calculate_size(slen));
 	if (i < 0) {
                 LDNS_FREE(buffer);
 		return LDNS_STATUS_INVALID_B32_EXT;
@@ -1088,7 +1097,10 @@ ldns_str2rdf_wks(ldns_rdf **rd, const char *str)
 	ldns_buffer *str_buf;
 
 	char *proto_str = NULL;
+	char *lc_proto_str = NULL;
 	char *token;
+	char *lc_token;
+	char *c;
 	if(strlen(str) == 0)
 		token = LDNS_XMALLOC(char, 50);
 	else 	token = LDNS_XMALLOC(char, strlen(str)+2);
@@ -1106,7 +1118,13 @@ ldns_str2rdf_wks(ldns_rdf **rd, const char *str)
 	while(ldns_bget_token(str_buf, token, "\t\n ", strlen(str)) > 0) {
 		if (!proto_str) {
 			proto_str = strdup(token);
-			if (!proto_str) {
+			lc_proto_str = strdup(token);
+			for (c = lc_proto_str; *c; c++) {
+				*c = tolower(*c);
+			}
+			if (!proto_str || !lc_proto_str) {
+				free(proto_str);
+				free(lc_proto_str);
 				LDNS_FREE(bitmap);
 				LDNS_FREE(token);
 	                        ldns_buffer_free(str_buf);
@@ -1114,10 +1132,31 @@ ldns_str2rdf_wks(ldns_rdf **rd, const char *str)
 			}
 		} else {
 			serv = getservbyname(token, proto_str);
+			if (!serv) {
+				serv = getservbyname(token, lc_proto_str);
+			}
+			if (!serv && (lc_token = strdup(token))) {
+				for (c = lc_token; *c; c++) {
+					*c = tolower(*c);
+				}
+				serv = getservbyname(lc_token, proto_str);
+				if (!serv) {
+					serv = getservbyname(lc_token, lc_proto_str);
+				}
+				free(lc_token);
+			}
 			if (serv) {
 				serv_port = (int) ntohs((uint16_t) serv->s_port);
 			} else {
 				serv_port = atoi(token);
+			}
+			if (serv_port < 0 || serv_port > 65535) {
+				LDNS_FREE(bitmap);
+			        LDNS_FREE(token);
+                                ldns_buffer_free(str_buf);
+			        free(proto_str);
+			        free(lc_proto_str);
+			        return LDNS_STATUS_INVALID_STR;
 			}
 			if (serv_port / 8 >= bm_len) {
 				uint8_t *b2 = LDNS_XREALLOC(bitmap, uint8_t, (serv_port / 8) + 1);
@@ -1126,6 +1165,7 @@ ldns_str2rdf_wks(ldns_rdf **rd, const char *str)
 				        LDNS_FREE(token);
 	                                ldns_buffer_free(str_buf);
 				        free(proto_str);
+				        free(lc_proto_str);
 				        return LDNS_STATUS_INVALID_STR;
                                 }
 				bitmap = b2;
@@ -1143,6 +1183,7 @@ ldns_str2rdf_wks(ldns_rdf **rd, const char *str)
 		LDNS_FREE(token);
 	        ldns_buffer_free(str_buf);
 	        free(proto_str);
+	        free(lc_proto_str);
 		return LDNS_STATUS_INVALID_STR;
 	}
 
@@ -1152,10 +1193,14 @@ ldns_str2rdf_wks(ldns_rdf **rd, const char *str)
 	        ldns_buffer_free(str_buf);
 	        LDNS_FREE(bitmap);
 	        free(proto_str);
+	        free(lc_proto_str);
 	        return LDNS_STATUS_INVALID_STR;
         }
     if (proto_str)
 		proto = getprotobyname(proto_str);
+    	if (!proto) {
+		proto = getprotobyname(lc_proto_str);
+	}
 	if (proto) {
 		data[0] = (uint8_t) proto->p_proto;
 	} else if (proto_str) {
@@ -1170,6 +1215,7 @@ ldns_str2rdf_wks(ldns_rdf **rd, const char *str)
 	ldns_buffer_free(str_buf);
 	LDNS_FREE(bitmap);
 	free(proto_str);
+	free(lc_proto_str);
 #ifdef HAVE_ENDSERVENT
 	endservent();
 #endif
@@ -1300,6 +1346,8 @@ ldns_str2rdf_ipseckey(ldns_rdf **rd, const char *str)
 		status = ldns_str2rdf_aaaa(&gateway_rdf, gateway);
 	} else if (gateway_type == 3) {
 		status = ldns_str2rdf_dname(&gateway_rdf, gateway);
+	} else if (gateway_type > 3) {
+		status = LDNS_STATUS_INVALID_STR;
 	}
 
 	if (status != LDNS_STATUS_OK) {
@@ -1496,8 +1544,10 @@ ldns_str2rdf_long_str(ldns_rdf **rd, const char *str)
 	if (! str) {
 		return LDNS_STATUS_SYNTAX_BAD_ESCAPE;
 	}
-	length = (size_t)(dp - data);
-
+	if (!(length = (size_t)(dp - data))) {
+		LDNS_FREE(data);
+		return LDNS_STATUS_SYNTAX_EMPTY;
+	}
 	/* Lose the overmeasure */
 	data = LDNS_XREALLOC(dp = data, uint8_t, length);
 	if (! data) {
@@ -1517,11 +1567,11 @@ ldns_str2rdf_long_str(ldns_rdf **rd, const char *str)
 ldns_status
 ldns_str2rdf_hip(ldns_rdf **rd, const char *str)
 {
-	const char *hit = strchr(str, ' ') + 1;
-	const char *pk  = hit == NULL ? NULL : strchr(hit, ' ') + 1;
+	const char *hit = str == NULL ? NULL : strchr(str, ' ');
+	const char *pk  = hit == NULL ? NULL : strchr(hit + 1, ' ');
 	size_t hit_size = hit == NULL ? 0
-	                : pk  == NULL ? strlen(hit) : (size_t) (pk - hit) - 1;
-	size_t  pk_size = pk  == NULL ? 0 : strlen(pk);
+	                : pk  == NULL ? strlen(hit + 1) : (size_t) (pk - hit) - 1;
+	size_t  pk_size = pk  == NULL ? 0 : strlen(pk + 1);
 	size_t hit_wire_size = (hit_size + 1) / 2;
 	size_t  pk_wire_size = ldns_b64_pton_calculate_size(pk_size);
 	size_t rdf_size = 4 + hit_wire_size + pk_wire_size;
@@ -1540,6 +1590,8 @@ ldns_str2rdf_hip(ldns_rdf **rd, const char *str)
 
 		return LDNS_STATUS_SYNTAX_ERR;
 	}
+	hit += 1;
+	pk  += 1;
 	if ((data = LDNS_XMALLOC(uint8_t, rdf_size)) == NULL) {
 
 		return LDNS_STATUS_MEM_ERR;
