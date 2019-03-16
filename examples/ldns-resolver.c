@@ -36,7 +36,7 @@ main(int argc, char **argv) {
 		printf("Failed: %s at line %d\n", ldns_get_errorstr_by_id(s), line);
 		exit(EXIT_FAILURE);
 	} else {
-		printf("Success\n");
+		printf("Succes\n");
 		ldns_resolver_print(stdout, r);
 		ldns_resolver_deep_free(r);
 	}
