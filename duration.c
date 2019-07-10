@@ -285,7 +285,7 @@ ldns_duration2string(const ldns_duration_type* duration)
         str = strncat(str, num, count+2);
     }
     if (T) {
-        str = strcat(str, "T");
+        str = strncat(str, "T", 1);
     }
     if (duration->hours > 0) {
         count = digits_in_number(duration->hours);
