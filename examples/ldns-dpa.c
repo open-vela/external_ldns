@@ -1740,7 +1740,6 @@ parse_match_expression(char *string)
 			free(left_str);
 			if (i >= strlen(str)-1) {
 				result = expr->left;
-				free_match_expression(expr);
 				goto done;
 			}
 		} else if (str[i] == ')') {
@@ -2172,16 +2171,16 @@ printf("timeval: %u ; %u\n", cur_hdr.ts.tv_sec, cur_hdr.ts.tv_usec);
 				if (ldns_str2rdf_a(&src_addr, astr) == LDNS_STATUS_OK) {
 					
 				}
+				free(astr);
 			}
-			free(astr);
 			ap = (uint8_t *) &(iptr->ip_dst);
 			astr = malloc(INET_ADDRSTRLEN);
 			if (inet_ntop(AF_INET, ap, astr, INET_ADDRSTRLEN)) {
 				if (ldns_str2rdf_a(&dst_addr, astr) == LDNS_STATUS_OK) {
 					
 				}
+				free(astr);
 			}
-			free(astr);
 
 			ip_hdr_size = (int) iptr->ip_hl * 4;
 			protocol = (uint8_t) iptr->ip_p;
@@ -2459,10 +2458,10 @@ parse_match_list(match_counters *counters, char *string)
 				strncpy(substring, &string[lastpos], i - lastpos + 1);
 				substring[i - lastpos] = '\0';
 				expr = parse_match_expression(substring);
-				free(substring);
 				if (!expr) {
 					return false;
 				}
+				free(substring);
 				/*
 				if (expr->op != MATCH_EXPR_LEAF) {
 					fprintf(stderr, "Matchlist can only contain <match>, not a logic expression\n");
@@ -2481,7 +2480,6 @@ parse_match_list(match_counters *counters, char *string)
 
 	if (!expr) {
 		fprintf(stderr, "Bad match: %s\n", substring);
-		free(substring);
 		return false;
 	}
 	free(substring);
@@ -2524,7 +2522,6 @@ parse_uniques(match_id ids[], size_t *count, char *string)
 				*count = *count + 1;
 			} else {
 				printf("Error parsing match list; unknown match name: %s\n", strpart);
-				free(str);
 				return false;
 			}
 			free(strpart);

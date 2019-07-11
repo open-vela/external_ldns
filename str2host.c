@@ -445,7 +445,6 @@ ldns_str2rdf_str(ldns_rdf **rd, const char *str)
 		*++dp = ch;
 	}
 	if (! str) {
-		LDNS_FREE(data);
 		return LDNS_STATUS_SYNTAX_BAD_ESCAPE;
 	}
 	length = (size_t)(dp - data);
@@ -1543,7 +1542,6 @@ ldns_str2rdf_long_str(ldns_rdf **rd, const char *str)
 		}
 	}
 	if (! str) {
-		LDNS_FREE(data);
 		return LDNS_STATUS_SYNTAX_BAD_ESCAPE;
 	}
 	if (!(length = (size_t)(dp - data))) {
