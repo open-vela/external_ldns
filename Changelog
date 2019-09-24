@@ -1,5 +1,6 @@
-1.7.2	2019-??-??
-	* bufix: Revert unused variables in ldns-config removal patch.
+...
+	* bugfix #70: heap Out-of-bound Read vulnerability in
+	  rr_frm_str_internal reported by pokerfacett.
 
 1.7.1	2019-07-26
 	* bugfix: Manage verification paths for OpenSSL >= 1.1.0
