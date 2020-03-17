@@ -14,7 +14,7 @@ echo "AUTOTOOLS_HOST:  $AUTOTOOLS_HOST"
 echo "Running libtoolize"
 if [ -n "$(command -v glibtoolize)" ]; then
     rm -f config.guess config.sub
-    if ! glibtoolize -ci ; then
+    if ! glibtool -ci ; then
         echo "Failed to libtoolize (glibtoolize)"
         exit 1
     fi
