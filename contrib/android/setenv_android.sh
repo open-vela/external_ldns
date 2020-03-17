@@ -1,43 +1,16 @@
 #!/usr/bin/env bash
 
-# ====================================================================
-# Sets the cross compile environment for Android
-#
-# Based upon OpenSSL's setenv-android.sh by TH, JW, and SM.
-# Heavily modified by JWW for Crypto++.
-# Updated by Skycoder42 for current recommendations for Android.
-# Modified by JWW for LDNS.
-# ====================================================================
-
-#########################################
-#####        Some validation        #####
-#########################################
-
-if [ -z "$ANDROID_API" ]; then
-    echo "ANDROID_API is not set. Please set it"
-    [[ "$0" = "${BASH_SOURCE[0]}" ]] && exit 1 || return 1
-fi
-
-if [ -z "$ANDROID_CPU" ]; then
-    echo "ANDROID_CPU is not set. Please set it"
-    [[ "$0" = "${BASH_SOURCE[0]}" ]] && exit 1 || return 1
-fi
-
+# Error checking
 if [ ! -d "$ANDROID_NDK_ROOT" ]; then
     echo "ERROR: ANDROID_NDK_ROOT is not a valid path. Please set it."
     echo "NDK root is $ANDROID_NDK_ROOT"
     [ "$0" = "${BASH_SOURCE[0]}" ] && exit 1 || return 1
 fi
 
-# cryptest-android.sh may run this script without sourcing.
-if [ "$0" = "${BASH_SOURCE[0]}" ]; then
-    echo "setenv-android.sh is usually sourced, but not this time."
-fi
-
 #####################################################################
 
 # Need to set THIS_HOST to darwin-x86_64, linux-x86_64,
-# windows, or windows-x86_64
+# windows-x86_64 or windows.
 
 if [[ "$(uname -s | grep -i -c darwin)" -ne 0 ]]; then
     THIS_HOST=darwin-x86_64
@@ -48,30 +21,38 @@ else
     [ "$0" = "${BASH_SOURCE[0]}" ] && exit 1 || return 1
 fi
 
-ANDROID_TOOLCHAIN="$ANDROID_NDK_ROOT/toolchains/llvm/prebuilt/$THIS_HOST/bin"
-ANDROID_SYSROOT="$ANDROID_NDK_ROOT/toolchains/llvm/prebuilt/$THIS_HOST/sysroot"
+AOSP_TOOLCHAIN_ROOT="$ANDROID_NDK_ROOT/toolchains/llvm/prebuilt/$THIS_HOST"
+AOSP_TOOLCHAIN_PATH="$AOSP_TOOLCHAIN_ROOT/bin"
+AOSP_SYSROOT="$AOSP_TOOLCHAIN_ROOT/sysroot"
 
 # Error checking
-if [ ! -d "$ANDROID_TOOLCHAIN" ]; then
-    echo "ERROR: ANDROID_TOOLCHAIN is not a valid path. Please set it."
-    echo "Path is $ANDROID_TOOLCHAIN"
+if [ ! -d "$AOSP_TOOLCHAIN_ROOT" ]; then
+    echo "ERROR: AOSP_TOOLCHAIN_ROOT is not a valid path. Please set it."
+    echo "Root is $AOSP_TOOLCHAIN_ROOT"
     [ "$0" = "${BASH_SOURCE[0]}" ] && exit 1 || return 1
 fi
 
 # Error checking
-if [ ! -d "$ANDROID_SYSROOT" ]; then
-    echo "ERROR: ANDROID_SYSROOT is not a valid path. Please set it."
-    echo "Path is $ANDROID_SYSROOT"
+if [ ! -d "$AOSP_TOOLCHAIN_PATH" ]; then
+    echo "ERROR: AOSP_TOOLCHAIN_PATH is not a valid path. Please set it."
+    echo "Path is $AOSP_TOOLCHAIN_PATH"
+    [ "$0" = "${BASH_SOURCE[0]}" ] && exit 1 || return 1
+fi
+
+# Error checking
+if [ ! -d "$AOSP_SYSROOT" ]; then
+    echo "ERROR: AOSP_SYSROOT is not a valid path. Please set it."
+    echo "Path is $AOSP_SYSROOT"
     [ "$0" = "${BASH_SOURCE[0]}" ] && exit 1 || return 1
 fi
 
 #####################################################################
 
-THE_ARCH=$(tr '[:upper:]' '[:lower:]' <<< "$ANDROID_CPU")
+AOSP_CPU=$(tr '[:upper:]' '[:lower:]' <<< "$ANDROID_CPU")
 
 # https://developer.android.com/ndk/guides/abis.html
-case "$THE_ARCH" in
-  armv7*|armeabi*)
+case "$AOSP_CPU" in
+  armeabi|armv7a|armv7-a|armeabi-v7a)
     CC="armv7a-linux-androideabi$ANDROID_API-clang"
     CXX="armv7a-linux-androideabi$ANDROID_API-clang++"
     LD="arm-linux-androideabi-ld"
@@ -84,7 +65,7 @@ case "$THE_ARCH" in
     CXXFLAGS="-march=armv7-a -mthumb -mfloat-abi=softfp -funwind-tables -fexceptions -frtti"
     ;;
 
-  armv8*|aarch64|arm64)
+  armv8|armv8a|aarch64|arm64|arm64-v8a)
     CC="aarch64-linux-android$ANDROID_API-clang"
     CXX="aarch64-linux-android$ANDROID_API-clang++"
     LD="aarch64-linux-android-ld"
@@ -127,52 +108,53 @@ case "$THE_ARCH" in
     echo "ERROR: Unknown architecture $ANDROID_CPU"
     [ "$0" = "${BASH_SOURCE[0]}" ] && exit 1 || return 1
     ;;
+
 esac
 
 #####################################################################
 
 # Error checking
-if [ ! -e "$ANDROID_TOOLCHAIN/$CC" ]; then
+if [ ! -e "$AOSP_TOOLCHAIN_PATH/$CC" ]; then
     echo "ERROR: Failed to find Android clang. Please edit this script."
     [ "$0" = "${BASH_SOURCE[0]}" ] && exit 1 || return 1
 fi
 
 # Error checking
-if [ ! -e "$ANDROID_TOOLCHAIN/$CXX" ]; then
+if [ ! -e "$AOSP_TOOLCHAIN_PATH/$CXX" ]; then
     echo "ERROR: Failed to find Android clang++. Please edit this script."
     [ "$0" = "${BASH_SOURCE[0]}" ] && exit 1 || return 1
 fi
 
 # Error checking
-if [ ! -e "$ANDROID_TOOLCHAIN/$RANLIB" ]; then
+if [ ! -e "$AOSP_TOOLCHAIN_PATH/$RANLIB" ]; then
     echo "ERROR: Failed to find Android ranlib. Please edit this script."
     [ "$0" = "${BASH_SOURCE[0]}" ] && exit 1 || return 1
 fi
 
 # Error checking
-if [ ! -e "$ANDROID_TOOLCHAIN/$AR" ]; then
+if [ ! -e "$AOSP_TOOLCHAIN_PATH/$AR" ]; then
     echo "ERROR: Failed to find Android ar. Please edit this script."
     [ "$0" = "${BASH_SOURCE[0]}" ] && exit 1 || return 1
 fi
 
 # Error checking
-if [ ! -e "$ANDROID_TOOLCHAIN/$AS" ]; then
+if [ ! -e "$AOSP_TOOLCHAIN_PATH/$AS" ]; then
     echo "ERROR: Failed to find Android as. Please edit this script."
     [ "$0" = "${BASH_SOURCE[0]}" ] && exit 1 || return 1
 fi
 
 # Error checking
-if [ ! -e "$ANDROID_TOOLCHAIN/$LD" ]; then
+if [ ! -e "$AOSP_TOOLCHAIN_PATH/$LD" ]; then
     echo "ERROR: Failed to find Android ld. Please edit this script."
     [ "$0" = "${BASH_SOURCE[0]}" ] && exit 1 || return 1
 fi
 
 #####################################################################
 
-LENGTH=${#ANDROID_TOOLCHAIN}
+LENGTH=${#AOSP_TOOLCHAIN_PATH}
 SUBSTR=${PATH:0:$LENGTH}
-if [ "$SUBSTR" != "$ANDROID_TOOLCHAIN" ]; then
-    export PATH="$ANDROID_TOOLCHAIN:$PATH"
+if [ "$SUBSTR" != "$AOSP_TOOLCHAIN_PATH" ]; then
+    export PATH="$AOSP_TOOLCHAIN_PATH:$PATH"
 fi
 
 #####################################################################
@@ -181,13 +163,12 @@ export CPP CC CXX LD AS AR RANLIB STRIP
 export ANDROID_SYSROOT="$AOSP_SYSROOT"
 export CPPFLAGS="-D__ANDROID_API__=$ANDROID_API"
 export CFLAGS="$CFLAGS --sysroot=$AOSP_SYSROOT"
-export CXXFLAGS="$CXXFLAGS -stdlib=libc++ --sysroot=$AOSP_SYSROOT"
+export CXXFLAGS="$CXXFLAGS --sysroot=$AOSP_SYSROOT"
 
 #####################################################################
 
-echo "ANDROID_TOOLCHAIN: $ANDROID_TOOLCHAIN"
+echo "AOSP_TOOLCHAIN_PATH: $AOSP_TOOLCHAIN_PATH"
 
-echo "CPP: $(command -v "$CPP")"
 echo "CC: $(command -v "$CC")"
 echo "CXX: $(command -v "$CXX")"
 echo "LD: $(command -v "$LD")"
