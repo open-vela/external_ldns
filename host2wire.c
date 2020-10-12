@@ -375,20 +375,6 @@ compression_node_free(ldns_rbnode_t *node, void *arg)
 ldns_status
 ldns_pkt2buffer_wire(ldns_buffer *buffer, const ldns_pkt *packet)
 {
-	ldns_status status;
-	ldns_rbtree_t *compression_data = ldns_rbtree_create((int (*)(const void *, const void *))ldns_dname_compare);
-
-	status = ldns_pkt2buffer_wire_compress(buffer, packet, compression_data);
-
-	ldns_traverse_postorder(compression_data,compression_node_free,NULL);
-	ldns_rbtree_free(compression_data);
-
-	return status;
-}
-
-ldns_status
-ldns_pkt2buffer_wire_compress(ldns_buffer *buffer, const ldns_pkt *packet, ldns_rbtree_t *compression_data)
-{
 	ldns_rr_list *rr_list;
 	uint16_t i;
 
@@ -396,6 +382,8 @@ ldns_pkt2buffer_wire_compress(ldns_buffer *buffer, const ldns_pkt *packet, ldns_
 	ldns_rr *edns_rr;
 	uint8_t edata[4];
 
+	ldns_rbtree_t *compression_data = ldns_rbtree_create((int (*)(const void *, const void *))ldns_dname_compare);
+	
 	(void) ldns_hdr2buffer_wire(buffer, packet);
 
 	rr_list = ldns_pkt_question(packet);
@@ -454,6 +442,9 @@ ldns_pkt2buffer_wire_compress(ldns_buffer *buffer, const ldns_pkt *packet, ldns_
 		(void) ldns_rr2buffer_wire_compress(buffer,
 		                           ldns_pkt_tsig(packet), LDNS_SECTION_ADDITIONAL, compression_data);
 	}
+
+	ldns_traverse_postorder(compression_data,compression_node_free,NULL);
+	ldns_rbtree_free(compression_data);
 
 	return LDNS_STATUS_OK;
 }

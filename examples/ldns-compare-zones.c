@@ -232,6 +232,7 @@ main(int argc, char **argv)
 			rr_chg = rr_cmp = -1;
 		}
 		if (rr_cmp < 0) {
+			i++;
 			if ((rrx != NULL) && (ldns_dname_compare(ldns_rr_owner(rr1), 
 											 ldns_rr_owner(rrx)
 											 ) != 0)) {
@@ -253,8 +254,8 @@ main(int argc, char **argv)
 				printf("%c-", op);
 				ldns_rr_print(stdout, rr1);
 			}
-			i++;
 		} else if (rr_cmp > 0) {
+			j++;
 			if ((rrx != NULL) && (ldns_dname_compare(ldns_rr_owner(rr2),
 											 ldns_rr_owner(rrx)
 											 ) != 0)) {
@@ -276,8 +277,9 @@ main(int argc, char **argv)
 				printf("%c+", op);
 				ldns_rr_print(stdout, rr2);
 			}
-			j++;
 		} else {
+			i++;
+			j++;
 			if ((rrx != NULL) && (ldns_dname_compare(ldns_rr_owner(rr1),
 											 ldns_rr_owner(rrx)
 											 ) != 0)) {
@@ -292,7 +294,6 @@ main(int argc, char **argv)
 				      ldns_dname_compare(ldns_rr_owner(rr1), 
 					                 ldns_rr_owner(ldns_rr_list_rr(rrl1, k))) == 0
 				    ; k++);
-                                
 
 				for ( l = j + 1
 				    ; l < rrc2 &&
@@ -307,14 +308,14 @@ main(int argc, char **argv)
 					nc1 = k - i;
 					nc2 = l - j;
 					for ( k = i + 1, l = j + 1
-					    ; (k - i) < nc1 && (l - j) < nc2 &&
-							ldns_rr_compare(ldns_rr_list_rr(rrl1, k),
-							ldns_rr_list_rr(rrl2, l)) == 0
+					    ; k < nc1 && l < nc2 &&
+					      ldns_rr_compare(ldns_rr_list_rr(rrl1, k),
+					                      ldns_rr_list_rr(rrl2, l)) == 0
 					    ; k++, l++);
-					if ((k - i) < nc1) {
+					if (k < nc1) {
 						op = OP_CHG;
 						num_chg++;
-                                       } else {
+					} else {
 						op = OP_EQ;
 						num_eq++;
 					}
@@ -325,8 +326,6 @@ main(int argc, char **argv)
 				printf("%c=", op);
 				ldns_rr_print(stdout, rr1);
 			}
-			i++;
-			j++;
 		}
 	}
 
