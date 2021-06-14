@@ -1,5 +1,5 @@
 # ===========================================================================
-#       https://www.gnu.org/software/autoconf-archive/ax_have_poll.html
+#       http://www.gnu.org/software/autoconf-archive/ax_have_poll.html
 # ===========================================================================
 #
 # SYNOPSIS
@@ -34,7 +34,7 @@
 #   and this notice are preserved. This file is offered as-is, without any
 #   warranty.
 
-#serial 8
+#serial 7
 
 AC_DEFUN([AX_HAVE_POLL], [dnl
   AC_MSG_CHECKING([for poll(2)])
