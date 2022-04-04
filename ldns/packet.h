@@ -35,7 +35,6 @@
 #include <ldns/error.h>
 #include <ldns/common.h>
 #include <ldns/rr.h>
-#include <ldns/edns.h>
 #include <sys/time.h>
 
 #ifdef __cplusplus
@@ -508,6 +507,7 @@ ldns_rr_list *ldns_pkt_rr_list_by_type(const ldns_pkt *p, ldns_rr_type t, ldns_p
  */
 ldns_rr_list *ldns_pkt_rr_list_by_name_and_type(const ldns_pkt *packet, const ldns_rdf *ownername, ldns_rr_type type, ldns_pkt_section sec);
 
+
 /**
  * check to see if an rr exist in the packet
  * \param[in] pkt the packet to examine
@@ -728,14 +728,6 @@ void ldns_pkt_set_edns_unassigned(ldns_pkt *packet, uint16_t value);
  * \return true if packet needs edns rr
  */
 bool ldns_pkt_edns(const ldns_pkt *packet);
-
-/**
- * Returns a list of structured EDNS options
- *
- * \param[in] packet the packet which contains the parsed EDNS data
- * \return list of ldns_edns_option structs
- */
-ldns_edns_option_list* ldns_pkt_edns_option_list(const ldns_pkt *packet);
 
 /**
  * Set the packet's edns udp size
