@@ -89,12 +89,12 @@ DEPFLAG		= @DEPFLAG@
 INSTALL		= $(srcdir)/install-sh
 
 LIBLOBJS	= $(LIBOBJS:.o=.lo)
-LDNS_LOBJS	= buffer.lo dane.lo dname.lo dnssec.lo dnssec_sign.lo dnssec_verify.lo dnssec_zone.lo duration.lo error.lo higher.lo host2str.lo host2wire.lo keys.lo net.lo packet.lo parse.lo radix.lo rbtree.lo rdata.lo resolver.lo rr.lo rr_functions.lo sha1.lo sha2.lo str2host.lo tsig.lo update.lo util.lo wire2host.lo zone.lo edns.lo
+LDNS_LOBJS	= buffer.lo dane.lo dname.lo dnssec.lo dnssec_sign.lo dnssec_verify.lo dnssec_zone.lo duration.lo error.lo higher.lo host2str.lo host2wire.lo keys.lo net.lo packet.lo parse.lo radix.lo rbtree.lo rdata.lo resolver.lo rr.lo rr_functions.lo sha1.lo sha2.lo str2host.lo tsig.lo update.lo util.lo wire2host.lo zone.lo
 LDNS_LOBJS_EX	= ^linktest\.c$$
 LDNS_ALL_LOBJS	= $(LDNS_LOBJS) $(LIBLOBJS)
 LIB		= libldns.la
 
-LDNS_HEADERS	= buffer.h dane.h dname.h dnssec.h dnssec_sign.h dnssec_verify.h dnssec_zone.h duration.h error.h higher.h host2str.h host2wire.h keys.h ldns.h packet.h parse.h radix.h rbtree.h rdata.h resolver.h rr_functions.h rr.h sha1.h sha2.h str2host.h tsig.h update.h wire2host.h zone.h edns.h
+LDNS_HEADERS	= buffer.h dane.h dname.h dnssec.h dnssec_sign.h dnssec_verify.h dnssec_zone.h duration.h error.h higher.h host2str.h host2wire.h keys.h ldns.h packet.h parse.h radix.h rbtree.h rdata.h resolver.h rr_functions.h rr.h sha1.h sha2.h str2host.h tsig.h update.h wire2host.h zone.h
 LDNS_HEADERS_EX	= ^config\.h|common\.h|util\.h|net\.h$$
 LDNS_HEADERS_GEN= common.h util.h net.h
 
@@ -167,7 +167,7 @@ no-drill-config-h:
 	     exit -1 ; \
 	fi
 
-drill/drill: $(DRILL_LOBJS) $(LIB) $(LIBLOBJS)
+drill/drill: all $(DRILL_LOBJS) $(LIB) $(LIBLOBJS)
 	$(LINK_EXE) $(DRILL_LOBJS) $(LIBLOBJS) $(LIB) $(LIBSSL_LIBS) $(LIBS) -o drill/drill
 
 drill/drill.1: $(srcdir)/drill/drill.1.in
@@ -188,7 +188,7 @@ uninstall-drill:
 clean-drill:
 	$(LIBTOOL) --mode clean rm -f $(DRILL_LOBJS) drill/drill drill/drill.1
 
-examples: no-examples-config-h $(EXAMPLE_PROGS) $(TESTNS) $(LDNS_DPA) $(LDNS_DANE) $(EX_SSL_PROGS) examples/ldns-dane.1 examples/ldns-verify-zone.1
+examples: no-examples-config-h all $(EXAMPLE_PROGS) $(TESTNS) $(LDNS_DPA) $(LDNS_DANE) $(EX_SSL_PROGS) examples/ldns-dane.1 examples/ldns-verify-zone.1
 no-examples-config-h:
 	@if test -e $(srcdir)/examples/config.h -o -e examples/config.h ; \
 	then echo "A config.h was detected in the examples subdirectory." ; \
@@ -505,7 +505,7 @@ allclean: test-clean clean
 test-clean:
 	tpkg -b test clean
 
-test: @TEST_P5_DNS_LDNS@
+test: examples drill @TEST_P5_DNS_LDNS@
 	./test/test_all.sh
 
 
@@ -799,7 +799,6 @@ zone.lo zone.o: $(srcdir)/zone.c ldns/config.h $(srcdir)/ldns/ldns.h ldns/util.h
  $(srcdir)/ldns/higher.h $(srcdir)/ldns/host2wire.h ldns/net.h $(srcdir)/ldns/str2host.h $(srcdir)/ldns/update.h \
  $(srcdir)/ldns/wire2host.h $(srcdir)/ldns/rr_functions.h $(srcdir)/ldns/parse.h $(srcdir)/ldns/radix.h \
  $(srcdir)/ldns/sha1.h $(srcdir)/ldns/sha2.h
-edns.lo edns.o: $(srcdir)/edns.c ldns/config.h $(srcdir)/ldns/edns.h
 compat/b64_ntop.lo compat/b64_ntop.o: $(srcdir)/compat/b64_ntop.c ldns/config.h
 compat/b64_pton.lo compat/b64_pton.o: $(srcdir)/compat/b64_pton.c ldns/config.h
 compat/calloc.lo compat/calloc.o: $(srcdir)/compat/calloc.c ldns/config.h
