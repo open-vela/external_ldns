@@ -315,7 +315,8 @@ specified in the (16-bit) type field with a value from ldns_rdf_type."
             """
             rr = _ldns.ldns_rdf_new_frm_str(rr_type, string)
             if (not rr) and raiseException:
-                raise Exception("Can't create query packet"))
+                raise Exception("Can't create query packet, " +
+                    "error: %d" % status)
             return rr
 
         #
