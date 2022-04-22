@@ -457,6 +457,30 @@ main(int argc, char *argv[])
 			serv = argv[i] + 1;
 			continue;
 		}
+		/* if ^+ then it's an EDNS option */
+		if (argv[i][0] == '+') {
+			if (strstr(argv[i], "nsid")) {
+				ldns_edns_option *edns;
+				edns_list = ldns_edns_option_list_new();
+
+				/* create NSID EDNS*/
+				edns = ldns_edns_new_from_data(LDNS_EDNS_NSID, 0, NULL);
+
+				if (edns_list == NULL || edns == NULL) {
+					error("EDNS option could not be allocated");
+					break;
+				}
+
+				if (!(ldns_edns_option_list_push(edns_list, edns))) {
+					error("EDNS option NSID could not be attached");
+					break;
+				}
+			}
+			else {
+				error("Requested EDNS option not supported");
+				break;
+			}
+		}
 		/* if has a dot, it's a name */
 		if (strchr(argv[i], '.')) {
 			name = argv[i];
