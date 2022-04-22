@@ -203,6 +203,7 @@ main(int argc, char *argv[])
 	qusevc = false;
 	qrandom = true;
 	key_verified = NULL;
+	ldns_edns_option_list* edns_list = NULL;
 
 	ldns_init_random(NULL, 0);
 
@@ -820,7 +821,7 @@ main(int argc, char *argv[])
 			}
 			status = ldns_resolver_prepare_query_pkt(&qpkt, res, qname, type, clas, qflags);
 			if(status != LDNS_STATUS_OK) {
-				error("%s", "making query: %s", 
+				error("%s", "making query: %s",
 					ldns_get_errorstr_by_id(status));
 			}
 			dump_hex(qpkt, query_file);
@@ -891,9 +892,24 @@ main(int argc, char *argv[])
 				} else {
 					/* create a packet and set the RD flag on it */
 					pkt = NULL;
-					status = ldns_resolver_query_status(
-							&pkt, res, qname,
-							type, clas, qflags);
+
+					status = ldns_resolver_prepare_query_pkt(&qpkt,
+						res, qname, type, clas, qflags);
+					if(status != LDNS_STATUS_OK) {
+						error("%s", "making query: %s", 
+							ldns_get_errorstr_by_id(status));
+					}
+
+					if (edns_list) {
+						/* attach the structed EDNS options for completeness */
+						ldns_pkt_set_edns_option_list(qpkt, edns_list);
+
+						/* write the structured EDNS data to unstructured data */
+						ldns_pkt_edns_write_option_list_to_edns_data(qpkt, edns_list);
+					}
+
+					status = ldns_resolver_send_pkt(&pkt, res, qpkt);
+
 					if (status != LDNS_STATUS_OK) {
 						error("error sending query: %s"
 						     , ldns_get_errorstr_by_id(
@@ -902,7 +918,8 @@ main(int argc, char *argv[])
 				}
 			}
 			
-			if (!pkt)  {
+			/* now handling the response message/packet */
+			if (!pkt) {
 				mesg("No packet received");
 				result = EXIT_FAILURE;
 			} else {
@@ -1015,6 +1032,7 @@ main(int argc, char *argv[])
 	ldns_rr_list_deep_free(key_list);
 	ldns_rr_list_deep_free(cmdline_rr_list);
 	ldns_rdf_deep_free(trace_start_name);
+	ldns_edns_option_list_deep_free(edns_list);
 	xfree(progname);
 	xfree(tsig_name);
 	xfree(tsig_data);

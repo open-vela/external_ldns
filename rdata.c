@@ -624,7 +624,7 @@ ldns_octet(char *word, size_t *length)
                         return LDNS_STATUS_DDD_OVERFLOW;
                     }
                 } else {
-                    /* an escaped character, like \<space> ? 
+                    /* an espaced character, like \<space> ? 
                     * remove the '\' keep the rest */
                     *p = *++s;
                     (*length)++;
