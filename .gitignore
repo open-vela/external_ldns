@@ -62,8 +62,6 @@
 /duration.o
 /error.lo
 /error.o
-/edns.lo
-/edns.o
 /examples/.libs/
 /examples/ldns-chaos
 /examples/ldns-chaos.lo
