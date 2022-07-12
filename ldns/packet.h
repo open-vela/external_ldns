@@ -510,7 +510,6 @@ ldns_rr_list *ldns_pkt_rr_list_by_type(const ldns_pkt *p, ldns_rr_type t, ldns_p
  */
 ldns_rr_list *ldns_pkt_rr_list_by_name_and_type(const ldns_pkt *packet, const ldns_rdf *ownername, ldns_rr_type type, ldns_pkt_section sec);
 
-
 /**
  * check to see if an rr exist in the packet
  * \param[in] pkt the packet to examine
@@ -690,11 +689,18 @@ uint8_t ldns_pkt_edns_version(const ldns_pkt *packet);
  */
 uint16_t ldns_pkt_edns_z(const ldns_pkt *packet);
 /**
- * return the packet's EDNS data
+ * return the packet's arbitrary EDNS data
  * \param[in] packet the packet
  * \return the data
  */
 ldns_rdf *ldns_pkt_edns_data(const ldns_pkt *packet);
+
+/**
+ * return the packet's structured EDNS data option list
+ * \param[in] packet the packet
+ * \return the list of EDNS options
+ */
+ldns_edns_option_list* ldns_pkt_edns_option_list(const ldns_pkt *packet);
 
 /**
  * return the packet's edns do bit
@@ -733,14 +739,21 @@ void ldns_pkt_set_edns_unassigned(ldns_pkt *packet, uint16_t value);
 bool ldns_pkt_edns(const ldns_pkt *packet);
 
 /**
- * Returns a list of structured EDNS options. The list will be automatically
- * freed when the packet is freed. The option list can be manipulated and
- * will be used when converting the packet to wireformat with ldns_pkt2wire.
+ * Returns a list of structured EDNS options
  *
  * \param[in] packet the packet which contains the EDNS data
  * \return the list of EDNS options
  */
-ldns_edns_option_list* ldns_pkt_edns_get_option_list(ldns_pkt *packet);
+ldns_edns_option_list* ldns_pkt_edns_get_option_list(const ldns_pkt *packet);
+
+/**
+ * Serialize the EDNS options to wireformat and write to the arbitrary EDNS data member
+ * \param[in] packet the packet which contains the EDNS data
+ * \param[in] edns_list the list of EDNS options
+ * \return true if succesful and false if not
+ */
+bool ldns_pkt_edns_write_option_list_to_edns_data(ldns_pkt *packet,
+       ldns_edns_option_list* edns_list);
 
 /**
  * Set the packet's edns udp size
@@ -767,15 +780,14 @@ void ldns_pkt_set_edns_version(ldns_pkt *packet, uint8_t v);
  */
 void ldns_pkt_set_edns_z(ldns_pkt *packet, uint16_t z);
 /**
- * Set the packet's EDNS data
+ * Set the packet's arbitrary EDNS data
  * \param[in] packet the packet
  * \param[in] data the data
  */
 void ldns_pkt_set_edns_data(ldns_pkt *packet, ldns_rdf *data);
 
 /**
- * Set the packet's structured EDNS data. Once an edns_option_list is set 
- * (or get), the option list will be used for converting into wireformat. 
+ * Set the packet's structured EDNS data
  * \param[in] packet the packet
  * \param[in] data the data
  */
