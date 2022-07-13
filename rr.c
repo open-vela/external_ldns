@@ -741,10 +741,8 @@ _ldns_rr_new_frm_fp_l_internal(ldns_rr **newrr, FILE *fp,
 	}
 	/* read an entire line in from the file */
 	if ((s = ldns_fget_token_l_st( fp, &line, &limit, false
-	                             , LDNS_PARSE_SKIP_SPACE, line_nr))) {
-		LDNS_FREE(line);
+	                             , LDNS_PARSE_SKIP_SPACE, line_nr)))
 		return s;
-	}
 
 	if (strncmp(line, "$ORIGIN", 7) == 0 && isspace((unsigned char)line[7])) {
 		if (*origin) {
@@ -1198,6 +1196,7 @@ ldns_rr_list_pop_rr(ldns_rr_list *rr_list)
 		        rr_list->_rrs = a;
 		        rr_list->_rr_capacity = cap;
                 }
+                /* if the realloc fails, the capacity for the list remains unchanged */
 	}
 
 	ldns_rr_list_set_rr_count(rr_list, rr_count - 1);
